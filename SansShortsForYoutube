@@ -5,7 +5,6 @@
 // @description  Removes Youtube Shorts
 // @author       Quentin Andrews
 // @namespace   https://github.com/rotemdan
-// @homepageURL https://github.com/rotemdan/MaximizerForYouTube
 // @match        https://*.youtube.com/*
 // @match        https://m.youtube.com/*
 // @grant       none

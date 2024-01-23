@@ -1,162 +1,80 @@
 // ==UserScript==
-// @name         Sans Shorts For YouTube™ V2
+// @name         YTSansShorts
 // @namespace    http://tampermonkey.net/
 // @version      0.03
-// @description  Removes Youtube Shorts
+// @description  Removes Youtubes' Shorts
 // @author       Quentin Andrews
 // @match        https://*.youtube.com/*
-// @match        https://m.youtube.com/*
-// @grant       none
-// @license      GNU GPLv3
+// @grant        none
 // ==/UserScript==
 
 (function () {
   'use strict';
-  // JSON Configuration
-  const config = [
-  {
-    "filter_type": "element",
-    "config": {
-      "keywords": "",
-      "phrase": "",
-      "element": {
-        "elementName": "yt-formatted-string",
-        "attributes": {
-          "id": "",
-          "class": "title style-scope ytd-guide-entry-renderer"
-        },
-        "elementInnerHtml": ["Shorts", "Originals","YouTube Music","Trending"]
-      },
-      "action": "seek_and_destroy",
-      "seek_and_destroy_config": {
-        "elementName": "TP-YT-PAPER-ITEM",
-        "attributes": {
-          "class": "style-scope ytd-guide-entry-renderer"
-        },
-        "action": "displayNone"
-      }
-    }
-  },
-  {
-    "filter_type": "element",
-    "config": {
-      "keywords": "",
-      "phrase": "",
-      "element": {
-        "elementName": "SPAN",
-        "attributes": {
-          "id": "title",
-          "class": "style-scope ytd-reel-shelf-renderer"
-        },
-        "elementInnerHtml": ["Shorts"],
-        "action": "displayNone"
-      },
-      "action": "seek_and_destroy",
-      "seek_and_destroy_config": {
-        "elementName": "div",
-        "attributes": {
-          "class": "style-scope ytd-reel-shelf-renderer"
-        },
-        "action": "displayNone"
-      }
-    }
-  }
-];
 
-  // Function to check all classes
-  function hasAllClasses(element, classes) {
-    return classes.every(cls => element.classList.contains(cls));
-  }
+  function removeElementsByClassNameAndContent(className, content) {
+    const elements = document.getElementsByClassName(className);
+    let toRemove = [];
 
-  class Observer {
-    constructor(config) {
-      this.config = config;
-      this.matchedTags = new Set();
-    }
+    for (let i = 0; i < elements.length; i++) {
+      let YTSansShorts;
 
-    matchTag(tag) {
-      if (!this.matchedTags.has(tag)) {
-        this.matchedTags.add(tag);
-      }
-
-      const targetElements = this.config.element.attributes.class.split(' ').map(x => x.trim());
-
-      // Perform the desired action on matching the tag
-      if (hasAllClasses(tag, targetElements)) {
-         // Check if the tag or any of its descendants contain the desired text
-         if(this.containsDesiredText(tag)){
-            // tag.parentNode.parentNode.style.display = "none";
-            SeekAndDestroy(tag, this.config.seek_and_destroy_config);
-         }
-      }
-    }
-    containsDesiredText(element) {
-      if(this.config.element.elementInnerHtml.includes(element.textContent.trim())){
-        return true;
-      }
-
-      for(let child of element.children){
-        if(this.containsDesiredText(child)){
-          return true;
+      if (className === 'title style-scope ytd-guide-entry-renderer' && content === 'Shorts') {
+        if (elements[i].textContent.trim() === content) {
+          YTSansShorts = elements[i].parentNode.parentNode;
+          toRemove.push(YTSansShorts);
         }
-      }
-
-      return false;
-    }
-  }
-
-  function findMatchingElements(filterConfig) {
-    const targetElements = filterConfig.element.attributes.class.split(' ').map(x => x.trim());
-    const elements = document.querySelectorAll(`${filterConfig.element.elementName}.${targetElements.join('.')}`);
-    for (const element of elements) {
-      filterConfig.observerInstance.matchTag(element);
-    }
-  }
-
-  function SeekAndDestroy(element, config) {
-      console.log(element);
-    if (!element) {
-      return null;
-    }
-
-    const isTagMatch = config.elementName ? element.tagName.toLowerCase() === config.elementName.toLowerCase() : true;
-    const isIdMatch = config.attributes.id ? element.id === config.attributes.id : true;
-    const isClassMatch = config.attributes.class ? config.attributes.class.split(' ').every(cls => element.classList.contains(cls)) : true;
-
-  if (isTagMatch && isIdMatch && isClassMatch) {
-    if (config.action === 'displayNone') {
-      element.parentNode.style.display = 'none'; // Hide the parent element
-    }
-    return element;
-  }
-
-    return SeekAndDestroy(element.parentNode, config);
-  }
-
-  for (const filter of config) {
-    filter.observerInstance = new Observer(filter.config);
-    findMatchingElements(filter.config);
-  }
-
-const mutationObserver = new MutationObserver((mutationsList, observer) => {
-  for (const mutation of mutationsList) {
-    if (mutation.type === 'childList') {
-      for (const addedNode of mutation.addedNodes) {
-        for (const filter of config) {
-          if (filter.config.element.elementName === addedNode.tagName?.toLowerCase()) {
-              console.log("Node Found" + addedNode);
-            setTimeout(() => filter.observerInstance.matchTag(addedNode), 5);
-          }
+      } else if (className === 'style-scope ytd-rich-shelf-renderer' && content === 'Shorts') {
+        if (elements[i].textContent.trim() === content) {
+          YTSansShorts = elements[i].parentElement;
+          toRemove.push(YTSansShorts);
         }
-        // Check if the added node has any children and observe them
-        if (addedNode.hasChildNodes()) {
-          observer.observe(addedNode, { childList: true, subtree: true });
+      } else if (className === 'yt-simple-endpoint style-scope ytd-mini-guide-entry-renderer' || className === 'yt-simple-endpoint style-scope ytd-guide-entry-renderer') {
+        if (elements[i].getAttribute("title") === content || elements[i].getAttribute("title") === "Originals") {
+          YTSansShorts = elements[i].parentElement;
+          toRemove.push(YTSansShorts);
+        }
+      } else if (className === 'style-scope ytd-rich-shelf-renderer') {
+    const shelves = document.querySelectorAll('.style-scope.ytd-rich-shelf-renderer');
+    shelves.forEach(shelf => {
+        if (shelf.getAttribute('is-slim-media') === '') {
+               YTSansShorts = elements[i].parentElement;
+          toRemove.push(YTSansShorts);
+        }
+    });
+}
+    }
+
+    removeShorts(toRemove);
+  }
+
+  function removeShorts(toRemove) {
+    for (let element of toRemove) {
+      if (element) {
+        element.parentNode.removeChild(element);
+      }
+    }
+  }
+
+  const targets = [
+    { className: 'style-scope ytd-rich-shelf-renderer'},
+    { className: 'title style-scope ytd-guide-entry-renderer', content: 'Shorts' },
+    { className: 'style-scope ytd-rich-shelf-renderer', content: 'Shorts' },
+    { className: 'yt-simple-endpoint style-scope ytd-mini-guide-entry-renderer', content: 'Shorts' },
+    { className: 'yt-simple-endpoint style-scope ytd-guide-entry-renderer', content: 'Shorts' }
+  ];
+
+  const observer = new MutationObserver((mutationsList, observer) => {
+    for (const mutation of mutationsList) {
+      if (mutation.type === 'childList') {
+        for (const target of targets) {
+          removeElementsByClassNameAndContent(target.className, target.content);
         }
       }
     }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  for (const target of targets) {
+    removeElementsByClassNameAndContent(target.className, target.content);
   }
-});
-
-mutationObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
-
 })();

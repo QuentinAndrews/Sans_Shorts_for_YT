@@ -1,0 +1,87 @@
+// ==UserScript==
+// @name         Sans Shorts for Youtube
+// @namespace    http://tampermonkey.net/
+// @version      0.04
+// @description  Removes Youtubes' Shorts
+// @author       Quentin Andrews
+// @match        https://*.youtube.com/*
+// @grant        none
+// ==/UserScript==
+
+(function () {
+  'use strict';
+
+  function removeElementsByClassNameAndContent(className, content) {
+    const elements = document.getElementsByClassName(className);
+    let toRemove = [];
+
+    for (let i = 0; i < elements.length; i++) {
+      let YTSansShorts;
+      if (className === 'style-scope ytd-reel-shelf-renderer' && content === 'Shorts') {
+        if (elements[i].textContent.trim() === content) {
+          YTSansShorts = elements[i].parentNode;
+          toRemove.push(YTSansShorts);
+        }
+      } else if (className === 'title style-scope ytd-guide-entry-renderer' && content === 'Shorts') {
+        if (elements[i].textContent.trim() === content) {
+          YTSansShorts = elements[i].parentNode.parentNode;
+          toRemove.push(YTSansShorts);
+        }
+      } else if (className === 'style-scope ytd-rich-shelf-renderer' && content === 'Shorts') {
+        if (elements[i].textContent.trim() === content) {
+          YTSansShorts = elements[i].parentElement;
+          toRemove.push(YTSansShorts);
+        }
+      } else if (className === 'yt-simple-endpoint style-scope ytd-mini-guide-entry-renderer' || className === 'yt-simple-endpoint style-scope ytd-guide-entry-renderer') {
+        if (elements[i].getAttribute("title") === content || elements[i].getAttribute("title") === "Originals") {
+          YTSansShorts = elements[i].parentElement;
+          toRemove.push(YTSansShorts);
+        }
+      } else if (className === 'style-scope ytd-rich-shelf-renderer') {
+    const shelves = document.querySelectorAll('.style-scope.ytd-rich-shelf-renderer');
+    shelves.forEach(shelf => {
+        if (shelf.getAttribute('is-slim-media') === '') {
+               YTSansShorts = elements[i].parentElement;
+          toRemove.push(YTSansShorts);
+        }
+    });
+}
+    }
+
+    removeShorts(toRemove);
+  }
+
+  function removeShorts(toRemove) {
+    for (let element of toRemove) {
+      if (element) {
+        element.parentNode.removeChild(element);
+      }
+    }
+  }
+
+  const targets = [
+    //Start: Added to remove new shorts panel that appears at the side of the  video currently being watched
+    { className: 'style-scope ytd-reel-shelf-renderer', content: 'Shorts'},
+    //End:
+    { className: 'style-scope ytd-rich-shelf-renderer'},
+    { className: 'title style-scope ytd-guide-entry-renderer', content: 'Shorts' },
+    { className: 'style-scope ytd-rich-shelf-renderer', content: 'Shorts' },
+    { className: 'yt-simple-endpoint style-scope ytd-mini-guide-entry-renderer', content: 'Shorts' },
+    { className: 'yt-simple-endpoint style-scope ytd-guide-entry-renderer', content: 'Shorts' }
+  ];
+
+  const observer = new MutationObserver((mutationsList, observer) => {
+    for (const mutation of mutationsList) {
+      if (mutation.type === 'childList') {
+        for (const target of targets) {
+          removeElementsByClassNameAndContent(target.className, target.content);
+        }
+      }
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  for (const target of targets) {
+    removeElementsByClassNameAndContent(target.className, target.content);
+  }
+})();

@@ -3,3 +3,6 @@
 v0.05 
 - Refactored code to remove repition of className and content removing duplicated code
 - Added Array.from to convert HTMLCollection into array to make manipulation easier and more efficient. 
+
+v0.06
+- Fix to allow blocking of shorts showing above preview thumbnails when watching an individual Youtube video

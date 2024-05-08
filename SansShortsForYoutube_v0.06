@@ -1,0 +1,59 @@
+// ==UserScript==
+// @name         SansShotsYT_v00.06
+// @namespace    http://tampermonkey.net/
+// @version      v0.06
+// @description  Removes YouTube's Shorts
+// @author       Quentin Andrews
+// @match        https://*.youtube.com/*
+// @grant        none
+// ==/UserScript==
+
+(function() {
+  'use strict';
+
+  // Removes elements by class name if their text content or title matches the specified content
+  function removeElementsByClassNameAndContent(className, content) {
+    const elements = Array.from(document.getElementsByClassName(className));
+    const toRemove = elements.filter(el => {
+       if (className === 'style-scope ytd-reel-shelf-renderer') {
+           //Addresses case where shorts panel appears above thumbnails when watching a individual youtube video.
+           return el.closest('ytd-reel-shelf-renderer');
+       }else{
+      if (content && el.textContent.trim() === content) return true;
+       }
+      if (content && el.getAttribute("title") === content) return true;
+      return el.getAttribute('is-slim-media') === '';
+    }).map(el => el.closest('.style-scope'));
+
+    // Batch remove elements
+    toRemove.forEach(el => {
+      if (el && el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    });
+  }
+
+  // Configuration for observer to dynamically remove elements
+  const targets = [
+    { className: 'style-scope ytd-reel-shelf-renderer', content: 'Shorts' },
+    { className: 'style-scope ytd-rich-shelf-renderer' },
+    { className: 'title style-scope ytd-guide-entry-renderer', content: 'Shorts' },
+    { className: 'style-scope ytd-rich-shelf-renderer', content: 'Shorts' },
+    { className: 'yt-simple-endpoint style-scope ytd-mini-guide-entry-renderer', content: 'Shorts' },
+    { className: 'yt-simple-endpoint style-scope ytd-guide-entry-renderer', content: 'Shorts' }
+  ];
+
+  // Mutation observer to handle DOM changes
+  const observer = new MutationObserver((mutationsList) => {
+    mutationsList.forEach(mutation => {
+      if (mutation.type === 'childList') {
+        targets.forEach(target => removeElementsByClassNameAndContent(target.className, target.content));
+      }
+    });
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // Initial removal on script start
+  targets.forEach(target => removeElementsByClassNameAndContent(target.className, target.content));
+})();

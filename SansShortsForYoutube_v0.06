@@ -2,7 +2,7 @@
 // @name         SansShortsYT_v00.06
 // @namespace    http://tampermonkey.net/
 // @version      v0.06
-// @description  Removes YouTube's Shorts
+// @description  Removes YouTube Shorts do help cut unhelpful distractions
 // @author       Quentin Andrews
 // @match        https://*.youtube.com/*
 // @grant        none
